@@ -1,57 +1,73 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Navbar } from './components/Navbar'
 import { KpiStrip } from './components/KpiStrip'
 import { LiveCharts } from './components/LiveCharts'
 import { DeviceTable } from './components/DeviceTable'
 import { AlertFeed } from './components/AlertFeed'
 import { DeviceDetail } from './components/DeviceDetail'
-import { buildAlert, seedDevices, tickDevice } from './data/simulator'
+import { api, connectSocket, type TelemetryUpdate } from './lib/api'
 import type { AlertItem, Device } from './types'
 
-const SITES = ['All Sites', 'Building A', 'Building B', 'Building C']
-
 function App() {
-  const [devices, setDevices] = useState<Device[]>(() => seedDevices(14))
+  const [devices, setDevices] = useState<Device[]>([])
   const [alerts, setAlerts] = useState<AlertItem[]>([])
+  const [sites, setSites] = useState<string[]>(['All Sites'])
+  const [connected, setConnected] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>('HVAC-04')
   const [detailOpen, setDetailOpen] = useState(false)
   const [site, setSite] = useState('All Sites')
-  const previousStatuses = useRef<Record<string, string>>({})
 
-  // Telemetry tick every 3s
+  // Initial data load + WebSocket subscription
   useEffect(() => {
-    const t = setInterval(() => {
-      setDevices((current) => {
-        const next = current.map(tickDevice)
-        const newAlerts: AlertItem[] = []
-        next.forEach((d) => {
-          const prev = previousStatuses.current[d.id]
-          if (d.status === 'alert' && prev !== 'alert') {
-            const a = buildAlert(d)
-            if (a) newAlerts.push(a)
-          }
-          previousStatuses.current[d.id] = d.status
-        })
-        if (newAlerts.length) {
-          setAlerts((prev) => [...newAlerts, ...prev].slice(0, 50))
-        }
-        return next
+    let cancelled = false
+
+    // Load snapshots via REST
+    Promise.all([api.getDevices(), api.getAlerts(), api.getSites()])
+      .then(([initialDevices, initialAlerts, initialSites]) => {
+        if (cancelled) return
+        setDevices(initialDevices)
+        setAlerts(initialAlerts)
+        setSites(['All Sites', ...initialSites])
       })
-    }, 3000)
-    return () => clearInterval(t)
-  }, [])
+      .catch((err) => console.error('Initial load failed:', err))
 
-  // Seed initial alerts from any alert-state devices
-  useEffect(() => {
-    const initial = devices
-      .filter((d) => d.status === 'alert')
-      .map((d) => buildAlert(d))
-      .filter((a): a is AlertItem => a !== null)
-    if (initial.length) setAlerts(initial)
-    devices.forEach((d) => {
-      previousStatuses.current[d.id] = d.status
+    // Subscribe to live updates
+    const socket = connectSocket()
+    socket.on('connect', () => setConnected(true))
+    socket.on('disconnect', () => setConnected(false))
+
+    socket.on('telemetry.updated', (u: TelemetryUpdate) => {
+      setDevices((prev) =>
+        prev.map((d) =>
+          d.id === u.id
+            ? {
+                ...d,
+                status: u.status,
+                temp: u.temp,
+                humidity: u.humidity,
+                airflow: u.airflow,
+                pressure: u.pressure,
+                powerDraw: u.powerDraw,
+                lastSeen: u.lastSeen,
+                history: [...d.history.slice(-29), u.latestPoint],
+              }
+            : d,
+        ),
+      )
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    socket.on('alert.created', (a: AlertItem) => {
+      setAlerts((prev) => [a, ...prev].slice(0, 50))
+    })
+
+    socket.on('alert.acknowledged', ({ id }: { id: string }) => {
+      setAlerts((prev) => prev.filter((a) => a.id !== id))
+    })
+
+    return () => {
+      cancelled = true
+      socket.disconnect()
+    }
   }, [])
 
   const filtered = useMemo(
@@ -70,7 +86,11 @@ function App() {
   }
 
   const handleDismiss = (id: string) => {
+    // Optimistic removal; server will also broadcast alert.acknowledged
     setAlerts((prev) => prev.filter((a) => a.id !== id))
+    api.acknowledgeAlert(id).catch((err) => {
+      console.error('Acknowledge failed:', err)
+    })
   }
 
   const handleSelectByDeviceId = (deviceId: string) => {
@@ -79,13 +99,14 @@ function App() {
   }
 
   const handleAcknowledge = (d: Device) => {
-    setDevices((prev) =>
-      prev.map((x) =>
-        x.id === d.id ? { ...x, status: 'online' as const } : x,
-      ),
-    )
+    // Dismiss all alerts for this device
+    const toAck = alerts.filter((a) => a.deviceId === d.id)
     setAlerts((prev) => prev.filter((a) => a.deviceId !== d.id))
-    previousStatuses.current[d.id] = 'online'
+    toAck.forEach((a) => {
+      api.acknowledgeAlert(a.id).catch((err) => {
+        console.error('Acknowledge failed:', err)
+      })
+    })
   }
 
   const lastUpdated = new Date().toLocaleTimeString([], {
@@ -95,7 +116,12 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
-      <Navbar site={site} sites={SITES} onSiteChange={setSite} connected />
+      <Navbar
+        site={site}
+        sites={sites}
+        onSiteChange={setSite}
+        connected={connected}
+      />
 
       <main className="max-w-[1600px] mx-auto px-8 py-8 space-y-6">
         {/* Page heading */}

@@ -94,17 +94,22 @@ Creates the initial fleet of 14 devices. For each device:
 
 This is the core of the simulation. Every 3 seconds, each online device gets a new reading. Here's what happens in order:
 
-**Step 1 — Random walk (normal sensor drift)**
+**Step 1 — Random walk + mean reversion (normal sensor drift)**
 
-Each sensor value nudges slightly from its previous value. This mimics real-world sensor noise and gradual environmental change:
+Each sensor value changes slightly from its previous value every tick. Two forces act on it simultaneously:
 
-| Sensor | Change per tick | Clamped range | Why clamped |
+- **Random walk** — a small random nudge up or down. Like a drunk wandering — no direction preference, no memory of where it started.
+- **Mean reversion** — a gentle pull back toward the sensor's normal operating baseline. Each tick, 5% of the gap between current value and baseline is added back. So if temp has drifted to 90°F (baseline 72°F), it gets pulled back by `(72 - 90) × 0.05 = -0.9°F` on top of the random noise.
+
+This means fault spikes naturally decay back to normal over ~20 ticks (~1 minute) rather than the fleet permanently drifting into alert territory. Status is **not permanent** — a device can go critical and then return to online on its own.
+
+| Sensor | Random change per tick | Baseline (reversion target) | Clamped range |
 |---|---|---|---|
-| Temp | ±0.4°F | 60–95°F | Outside this = physically implausible |
-| Humidity | ±1.2% | 25–80% | Outside this = sensor fault territory |
-| Airflow | ±15 CFM | 300–600 | Below 300 = blocked, above 600 = overspeeding |
-| Pressure | ±0.05 kPa | 0.6–1.8 | Below 0.6 = leak alert threshold |
-| Power | ±0.1 kW | 0.5–4.9 | Within rated range of the unit |
+| Temp | ±0.4°F | 72°F | 60–95°F |
+| Humidity | ±1.2% | 50% | 25–80% |
+| Airflow | ±15 CFM | 450 CFM | 300–600 |
+| Pressure | ±0.05 kPa | 1.2 kPa | 0.6–1.8 |
+| Power | ±0.1 kW | 3.0 kW | 0.5–4.9 |
 
 **Step 2 — Fault injection (random spikes)**
 
@@ -117,12 +122,17 @@ At a 3s tick rate, a temp spike will occur roughly once every ~6 minutes per dev
 
 **Step 3 — Status derivation**
 
-Status is not stored — it is recalculated from the new sensor values after every tick:
+Status is not stored — it is recalculated fresh from the new sensor values after every tick. This means status can change in both directions:
+
+- A device can go `online` → `warning` → `alert` as values climb
+- A device can go `alert` → `warning` → `online` as mean reversion pulls values back down
+- `offline` devices skip the tick entirely and are returned unchanged
+
+The thresholds:
 
 - `temp > 82°F` OR `humidity > 65%` OR `pressure < 0.7 kPa` → `alert`
 - `temp > 77°F` OR `humidity > 62%` → `warning`
 - Otherwise → `online`
-- `offline` devices skip the tick entirely and are returned unchanged
 
 **Step 4 — History slide**
 

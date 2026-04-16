@@ -6,7 +6,7 @@ import { InputText } from 'primereact/inputtext'
 import { Dropdown } from 'primereact/dropdown'
 import { useState, useMemo } from 'react'
 import type { Device, DeviceStatus } from '../types'
-import { formatLastSeen } from '../data/simulator'
+import { formatLastSeen } from '../lib/format'
 
 interface Props {
   devices: Device[]

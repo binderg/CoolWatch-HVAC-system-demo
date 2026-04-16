@@ -65,14 +65,25 @@ function seedDevices(count = 14): Device[] {
   return devices
 }
 
+// Mean-reversion targets — pulls values back toward normal operating conditions
+// so fault spikes decay over time instead of the fleet drifting permanently bad.
+const BASE_TEMP = 72
+const BASE_HUM = 50
+const BASE_AIR = 450
+const BASE_PRESS = 1.2
+const BASE_POWER = 3.0
+const REVERSION = 0.05 // fraction of the gap pulled back per tick
+
 function tickDevice(d: Device): Device {
   if (d.status === 'offline') return d
 
-  const newTemp = clamp(d.temp + rand(-0.4, 0.4), 60, 95)
-  const newHum = clamp(d.humidity + rand(-1.2, 1.2), 25, 80)
-  const newAir = clamp(d.airflow + rand(-15, 15), 300, 600)
-  const newPress = clamp(d.pressure + rand(-0.05, 0.05), 0.6, 1.8)
-  const newPower = clamp(d.powerDraw + rand(-0.1, 0.1), 0.5, 4.9)
+  const pull = (current: number, base: number) => (base - current) * REVERSION
+
+  const newTemp = clamp(d.temp + rand(-0.4, 0.4) + pull(d.temp, BASE_TEMP), 60, 95)
+  const newHum = clamp(d.humidity + rand(-1.2, 1.2) + pull(d.humidity, BASE_HUM), 25, 80)
+  const newAir = clamp(d.airflow + rand(-15, 15) + pull(d.airflow, BASE_AIR), 300, 600)
+  const newPress = clamp(d.pressure + rand(-0.05, 0.05) + pull(d.pressure, BASE_PRESS), 0.6, 1.8)
+  const newPower = clamp(d.powerDraw + rand(-0.1, 0.1) + pull(d.powerDraw, BASE_POWER), 0.5, 4.9)
 
   // fault injection
   const spikeTemp = Math.random() < 0.008 ? newTemp + rand(8, 14) : newTemp
