@@ -173,6 +173,11 @@ body {
   color: #111827 !important;
 }
 
+.p-dropdown-item{
+  padding: 20px;
+  height: 30px !important;
+}
+
 /* Input */
 .p-inputtext {
   border: 1px solid #e5e7eb !important;
@@ -188,6 +193,11 @@ body {
 .p-inputtext:focus {
   border-color: #2563eb !important;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+}
+
+
+.p-dropdown .p-inputtext{
+  border:none !important;
 }
 
 /* Button text variant */
