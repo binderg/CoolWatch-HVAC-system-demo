@@ -2,8 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { PrimeReactProvider } from 'primereact/api'
 
-// PrimeReact theme — swap to any theme under primereact/resources/themes/
-import 'primereact/resources/themes/lara-dark-cyan/theme.css'
+// PrimeReact theme — professional light
+import 'primereact/resources/themes/lara-light-indigo/theme.css'
 import 'primeicons/primeicons.css'
 import 'primeflex/primeflex.css'
 
