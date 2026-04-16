@@ -3,11 +3,19 @@ import type { AlertItem, Device, TelemetryPoint } from '../types'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
 const WS_URL = import.meta.env.VITE_WS_URL ?? 'http://localhost:3001'
+const API_KEY = import.meta.env.VITE_API_KEY ?? ''
 
 // ─── REST ───────────────────────────────────────────────────────────────────
 
 async function json<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, init)
+  const res = await fetch(`${API_URL}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': API_KEY,
+      ...init?.headers,
+    },
+  })
   if (!res.ok) throw new Error(`${init?.method ?? 'GET'} ${path} → ${res.status}`)
   return res.json() as Promise<T>
 }
@@ -38,5 +46,8 @@ export interface TelemetryUpdate {
 }
 
 export function connectSocket(): Socket {
-  return io(WS_URL, { transports: ['websocket'] })
+  return io(WS_URL, {
+    transports: ['websocket'],
+    auth: { key: API_KEY },
+  })
 }
