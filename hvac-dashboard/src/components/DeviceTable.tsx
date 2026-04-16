@@ -3,8 +3,7 @@ import { Column } from 'primereact/column'
 import { Tag } from 'primereact/tag'
 import { Button } from 'primereact/button'
 import { InputText } from 'primereact/inputtext'
-import { Dropdown } from 'primereact/dropdown'
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import type { Device, DeviceStatus } from '../types'
 import { formatLastSeen } from '../lib/format'
 
@@ -28,49 +27,10 @@ const statusMeta: Record<
   warning: { label: 'Warning', severity: 'warning', icon: 'pi-circle-fill' },
 }
 
-function parseFloor(location: string): string | null {
-  const m = location.match(/Floor\s+(\d+)/i)
-  return m ? `Floor ${m[1]}` : null
-}
-
-function parseZone(location: string): string | null {
-  const m = location.match(/Zone\s+([A-Z0-9]+)/i)
-  return m ? `Zone ${m[1]}` : null
-}
-
-const dropdownPt = {
-  clearIcon: { className: 'absolute top-1/2 -translate-y-1/2' },
-}
-
 export function DeviceTable({ devices, selected, onSelect }: Props) {
   const [search, setSearch] = useState('')
-  const [buildingFilter, setBuildingFilter] = useState<string | null>(null)
-  const [floorFilter, setFloorFilter] = useState<string | null>(null)
-  const [zoneFilter, setZoneFilter] = useState<string | null>(null)
-
-  const buildingOptions = useMemo(
-    () => [...new Set(devices.map((d) => d.site))].sort(),
-    [devices],
-  )
-
-  const floorOptions = useMemo(
-    () =>
-      [...new Set(devices.map((d) => parseFloor(d.location)).filter(Boolean) as string[])].sort(
-        (a, b) => parseInt(a.replace(/\D/g, ''), 10) - parseInt(b.replace(/\D/g, ''), 10),
-      ),
-    [devices],
-  )
-
-  const zoneOptions = useMemo(
-    () =>
-      [...new Set(devices.map((d) => parseZone(d.location)).filter(Boolean) as string[])].sort(),
-    [devices],
-  )
 
   const filtered = devices.filter((d) => {
-    if (buildingFilter && d.site !== buildingFilter) return false
-    if (floorFilter && parseFloor(d.location) !== floorFilter) return false
-    if (zoneFilter && parseZone(d.location) !== zoneFilter) return false
     if (search) {
       const q = search.toLowerCase()
       if (
