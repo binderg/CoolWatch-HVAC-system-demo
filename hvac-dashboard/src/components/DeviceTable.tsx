@@ -38,6 +38,10 @@ function parseZone(location: string): string | null {
   return m ? `Zone ${m[1]}` : null
 }
 
+const dropdownPt = {
+  clearIcon: { className: 'absolute top-1/2 -translate-y-1/2' },
+}
+
 export function DeviceTable({ devices, selected, onSelect }: Props) {
   const [search, setSearch] = useState('')
   const [buildingFilter, setBuildingFilter] = useState<string | null>(null)
@@ -98,7 +102,33 @@ export function DeviceTable({ devices, selected, onSelect }: Props) {
               {filtered.length} of {devices.length} units shown
             </p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
+            {/* Filters */}
+            {/* <i className="pi pi-filter text-slate-400 text-xs" />
+            <Dropdown
+              value={buildingFilter}
+              options={buildingOptions}
+              onChange={(e) => setBuildingFilter(e.value ?? null)}
+              placeholder="Building"
+              showClear
+              pt={dropdownPt}
+            />
+            <Dropdown
+              value={floorFilter}
+              options={floorOptions}
+              onChange={(e) => setFloorFilter(e.value ?? null)}
+              placeholder="Floor"
+              showClear
+              pt={dropdownPt}
+            />
+            <Dropdown
+              value={zoneFilter}
+              options={zoneOptions}
+              onChange={(e) => setZoneFilter(e.value ?? null)}
+              placeholder="Zone"
+              showClear
+              pt={dropdownPt}
+            /> */}
             <span className="relative">
               <i className="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none" />
               <InputText
@@ -116,30 +146,6 @@ export function DeviceTable({ devices, selected, onSelect }: Props) {
               aria-label="Export"
             />
           </div>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <i className="pi pi-filter text-slate-400 text-xs" />
-          <Dropdown
-            value={buildingFilter}
-            options={buildingOptions}
-            onChange={(e) => setBuildingFilter(e.value ?? null)}
-            placeholder="Building"
-            showClear
-          />
-          <Dropdown
-            value={floorFilter}
-            options={floorOptions}
-            onChange={(e) => setFloorFilter(e.value ?? null)}
-            placeholder="Floor"
-            showClear
-          />
-          <Dropdown
-            value={zoneFilter}
-            options={zoneOptions}
-            onChange={(e) => setZoneFilter(e.value ?? null)}
-            placeholder="Zone"
-            showClear
-          />
         </div>
       </div>
 
