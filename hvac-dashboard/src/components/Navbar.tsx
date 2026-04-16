@@ -1,6 +1,7 @@
 import { Dropdown } from 'primereact/dropdown'
 import { Avatar } from 'primereact/avatar'
 import { Button } from 'primereact/button'
+import logo from '../assets/logo.svg'
 
 interface Props {
   site: string
@@ -17,9 +18,19 @@ export function Navbar({ site, sites, onSiteChange, connected }: Props) {
       <div className="max-w-[1600px] mx-auto px-8 h-16 flex items-center justify-between gap-6">
         {/* Brand */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="w-8 h-8 rounded-md bg-slate-900 flex items-center justify-center">
-            <i className="pi pi-bolt text-white text-sm" />
-          </div>
+          <div
+            className="w-8 h-8 bg-sky-600"
+            style={{
+              maskImage: `url(${logo})`,
+              maskSize: 'contain',
+              maskRepeat: 'no-repeat',
+              maskPosition: 'center',
+              WebkitMaskImage: `url(${logo})`,
+              WebkitMaskSize: 'contain',
+              WebkitMaskRepeat: 'no-repeat',
+              WebkitMaskPosition: 'center',
+            }}
+          />
           <div className="flex flex-col leading-none">
             <span className="text-slate-900 font-semibold text-[15px] tracking-tight">
               CoolWatch
