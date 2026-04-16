@@ -1,5 +1,4 @@
 import { Button } from 'primereact/button'
-import { ScrollPanel } from 'primereact/scrollpanel'
 import type { AlertItem } from '../types'
 
 interface Props {
@@ -66,7 +65,7 @@ export function AlertFeed({ alerts, onDismiss, onSelectDevice }: Props) {
       </div>
 
       {/* Feed */}
-      <ScrollPanel className="flex-1 min-h-0" style={{ width: '100%' }}>
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="p-3 space-y-2">
           {alerts.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-slate-500">
@@ -129,7 +128,7 @@ export function AlertFeed({ alerts, onDismiss, onSelectDevice }: Props) {
             )
           })}
         </div>
-      </ScrollPanel>
+      </div>
     </div>
   )
 }
