@@ -1,6 +1,6 @@
 # CoolWatch — Architecture & Data Reference
 
-A technical reference for the frontend data model, simulation engine, and state management as implemented in Phase 1. Updated as the backend is wired in.
+A technical reference for the full stack — frontend data model, simulation engine, state management, and the NestJS backend API.
 
 ---
 
@@ -61,49 +61,84 @@ Alerts are **separate from devices**. A device has a `status` field reflecting i
 
 ## Simulation Engine
 
-All simulation logic lives in `hvac-dashboard/src/data/simulator.ts`.
+All simulation logic lives in `hvac-dashboard/src/data/simulator.ts` (frontend) and is mirrored in `hvac-api/src/simulator/simulator.service.ts` (backend). Both use identical logic — the backend version runs on the server and pushes results via WebSocket instead of updating React state directly.
 
-### `seedDevices(count = 14)`
+---
 
-Runs once at application boot via `useState` initializer.
+### What each sensor simulates
 
-- Creates `count` devices with IDs `HVAC-01` through `HVAC-14`
-- Distributes them round-robin across 3 buildings, 5 floors, 4 zones
-- Each device gets a random baseline temp (69–75°F) and humidity (42–58%)
-- Calls `makeInitialHistory()` to pre-populate 30 historical readings going back 2.5 minutes, so the charts are never empty on first render
-- **Hardcodes** HVAC-04 as `alert` and HVAC-09 as `offline` so the dashboard has meaningful state immediately
+| Sensor | Unit | What it represents in the real world |
+|---|---|---|
+| `temp` | °F | Air temperature inside the HVAC unit or the zone it serves |
+| `humidity` | % | Relative humidity — too high means drain/coil issues, too low means dry air |
+| `airflow` | CFM (cubic feet/min) | How much air the unit is moving — drops indicate blockages or fan faults |
+| `pressure` | kPa | Refrigerant or duct pressure — a drop is often the first sign of a leak |
+| `powerDraw` | kW | Electrical consumption — spikes can indicate mechanical strain |
 
-### `tickDevice(d: Device)`
+---
 
-Called every **3 seconds** on every device. Returns a new device object (immutable update).
+### `seedDevices(count = 14)` — runs once at boot
 
-Offline devices are returned unchanged.
+Creates the initial fleet of 14 devices. For each device:
 
-For all other devices:
+1. Assigns it a **building, floor, and zone** (round-robin across 3 buildings, 5 floors, 4 zones)
+2. Picks a **random baseline** temp (69–75°F) and humidity (42–58%) — simulates each unit having slightly different normal operating conditions
+3. Calls `makeInitialHistory()` to **pre-fill 30 historical readings** spaced 5 seconds apart, going back 2.5 minutes — so the charts are never empty on first load
+4. **Hardcodes** two devices into interesting states immediately:
+   - HVAC-04 → `alert` (so the dashboard has a visible fault straight away)
+   - HVAC-09 → `offline` (simulates a unit that has stopped reporting)
 
-1. **Random walk** — each sensor value moves slightly from its previous value:
-   - Temp: ±0.4°F, clamped 60–95°F
-   - Humidity: ±1.2%, clamped 25–80%
-   - Airflow: ±15 CFM, clamped 300–600
-   - Pressure: ±0.05 kPa, clamped 0.6–1.8
-   - Power: ±0.1 kW, clamped 0.5–4.9
+---
 
-2. **Fault injection** — small independent probabilities of a short spike:
-   - 0.8% chance: temp spikes +8 to +14°F (simulates a compressor fault)
-   - 0.5% chance: humidity spikes +10 to +18% (simulates a drain blockage)
+### `tickDevice(d: Device)` — runs every 3 seconds on every device
 
-3. **Status derivation** — computed from the new values, not stored separately:
-   - `temp > 82 || humidity > 65 || pressure < 0.7` → `alert`
-   - `temp > 77 || humidity > 62` → `warning`
-   - Otherwise → `online`
+This is the core of the simulation. Every 3 seconds, each online device gets a new reading. Here's what happens in order:
 
-4. **History slide** — `history.slice(-29)` drops the oldest point, the new `TelemetryPoint` is appended. The array stays at 30 items.
+**Step 1 — Random walk (normal sensor drift)**
 
-### `buildAlert(d: Device)`
+Each sensor value nudges slightly from its previous value. This mimics real-world sensor noise and gradual environmental change:
 
-Called in `App.tsx` only when a device *transitions into* the `alert` status. Returns an `AlertItem` with a human-readable message based on which threshold was crossed first (temp → humidity → pressure, in that priority order).
+| Sensor | Change per tick | Clamped range | Why clamped |
+|---|---|---|---|
+| Temp | ±0.4°F | 60–95°F | Outside this = physically implausible |
+| Humidity | ±1.2% | 25–80% | Outside this = sensor fault territory |
+| Airflow | ±15 CFM | 300–600 | Below 300 = blocked, above 600 = overspeeding |
+| Pressure | ±0.05 kPa | 0.6–1.8 | Below 0.6 = leak alert threshold |
+| Power | ±0.1 kW | 0.5–4.9 | Within rated range of the unit |
 
-Returns `null` if the device is not in alert state — safe to call defensively.
+**Step 2 — Fault injection (random spikes)**
+
+Independently of the random walk, two low-probability faults can fire:
+
+- **0.8% chance per tick**: temp spikes +8 to +14°F — simulates a compressor fault causing sudden heat buildup
+- **0.5% chance per tick**: humidity spikes +10 to +18% — simulates a drain line blockage causing moisture to back up
+
+At a 3s tick rate, a temp spike will occur roughly once every ~6 minutes per device across the fleet.
+
+**Step 3 — Status derivation**
+
+Status is not stored — it is recalculated from the new sensor values after every tick:
+
+- `temp > 82°F` OR `humidity > 65%` OR `pressure < 0.7 kPa` → `alert`
+- `temp > 77°F` OR `humidity > 62%` → `warning`
+- Otherwise → `online`
+- `offline` devices skip the tick entirely and are returned unchanged
+
+**Step 4 — History slide**
+
+The new reading is appended to the device's `history` array and the oldest point is dropped (`history.slice(-29)`). The array stays exactly 30 points — representing the last ~2.5 minutes of readings. This is what feeds the live charts.
+
+---
+
+### `buildAlert(d: Device)` — called on status transition
+
+Only fires when a device **transitions into** `alert` (not on every tick it stays in alert). Produces a human-readable `AlertItem` message based on which threshold was crossed first:
+
+1. Temp > 82°F → `"HVAC-04 temperature exceeded 84.2°F"`
+2. Humidity > 65% → `"HVAC-04 humidity at 68% (high)"`
+3. Pressure < 0.7 kPa → `"HVAC-04 pressure drop detected (0.63 kPa)"`
+
+The transition check (not re-alerting on every tick) is handled by `previousStatuses` — a ref/map that records each device's status from the last tick and compares it to the current one.
 
 ---
 
@@ -176,20 +211,50 @@ devices[]
 
 ---
 
-## What Is Simulated vs. What the Real API Will Provide
+## Backend API — `hvac-api/`
 
-| Concern | Phase 1 (simulated) | Phase 2+ (real backend) |
+The NestJS backend is implemented and running. It mirrors the frontend simulation but runs on the server, pushing updates to the React app via WebSocket and serving initial data over REST.
+
+### Backend folder structure
+
+| Folder | What it is | Why it exists |
 |---|---|---|
-| Device list | `seedDevices()` at boot | `GET /devices` on mount |
-| Live telemetry | `setInterval` + `tickDevice()` | WebSocket `telemetry.updated` events |
-| Alert detection | Frontend threshold logic in `tickDevice` | Backend emits `alert.created` via WebSocket |
-| Alert dismiss | Filters local `alerts[]` array | `POST /alerts/:id/acknowledge` |
-| Alert acknowledge | Sets device status to `online` locally | Backend persists acknowledgement, pushes `alert.acknowledged` |
-| Maintenance log | 3 hardcoded strings per device | Included in `GET /devices/:id` response |
-| Chart history | Rolling 30-point in-memory array | `GET /devices/:id/telemetry?window=30m` on device select |
-| Site/building list | Hardcoded `SITES` constant | `GET /sites` or part of initial dashboard snapshot |
+| `simulator/` | Server-side version of the React sim file | Holds device state + 3s tick loop on the server |
+| `telemetry/` | WebSocket broadcaster | Pushes live updates to all connected clients via Socket.IO |
+| `devices/` | REST routes for device data | Initial fleet load + telemetry history on device select |
+| `alerts/` | REST routes for alert data | Load alert feed + acknowledge/dismiss alerts |
+| `sites/` | REST route for site list | Populates the site filter dropdown |
 
-The component interfaces are already shaped for the real backend. When the NestJS API is ready, the swap points are:
-- Replace `useState(() => seedDevices(14))` with a `useEffect` fetch
-- Replace the `setInterval` in `App.tsx` with a WebSocket subscription
-- The components themselves (`KpiStrip`, `DeviceTable`, `LiveCharts`, etc.) do not need to change
+### REST endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/devices` | All 14 devices with full state |
+| `GET` | `/devices/:id` | Single device including maintenance log |
+| `GET` | `/devices/:id/telemetry` | Last 30 `TelemetryPoint[]` for chart history |
+| `GET` | `/alerts` | Active alert feed (max 50) |
+| `POST` | `/alerts/:id/acknowledge` | Dismiss alert, emits `alert.acknowledged` WS event |
+| `GET` | `/sites` | List of building names for the site filter |
+
+### WebSocket events (Socket.IO)
+
+| Event | Payload | When |
+|---|---|---|
+| `telemetry.updated` | Lean device snapshot (no history array) | Every 3s per device |
+| `alert.created` | Full `AlertItem` | When a device transitions into `alert` status |
+| `alert.acknowledged` | `{ id }` | When an alert is dismissed via REST |
+
+---
+
+## Frontend swap points — connecting React to the API
+
+The React components (`KpiStrip`, `DeviceTable`, `LiveCharts`, etc.) do not need to change. Only `App.tsx` needs updating:
+
+| What to replace | Current (simulated) | Replace with |
+|---|---|---|
+| Device list on boot | `useState(() => seedDevices(14))` | `useEffect` → `GET /devices` |
+| Live telemetry | `setInterval` + `tickDevice()` | Socket.IO subscription to `telemetry.updated` |
+| Alert feed | Frontend threshold detection | Socket.IO subscription to `alert.created` |
+| Alert dismiss | Filters local `alerts[]` array | `POST /alerts/:id/acknowledge` |
+| Alert acknowledge | Sets device status locally | REST call + listen for `alert.acknowledged` |
+| Site list | Hardcoded `SITES` constant | `GET /sites` on mount |
