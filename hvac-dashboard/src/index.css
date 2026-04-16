@@ -1,111 +1,259 @@
+@import 'tailwindcss';
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
+  color-scheme: light;
+  font-family:
+    'Inter',
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
+html,
+body,
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  margin: 0;
+  background: #f7f8fa;
+  color: #1f2937;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+/* ---------------- PrimeReact flat / enterprise overrides ---------------- */
+
+/* Remove PrimeReact's default card shadow/rounding so our Tailwind wrappers lead */
+.p-card {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+.p-card .p-card-body {
+  padding: 1.25rem !important;
+}
+.p-card .p-card-content {
+  padding: 0 !important;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+/* DataTable — clean enterprise look */
+.p-datatable {
+  background: transparent !important;
+  font-size: 13px !important;
+}
+.p-datatable .p-datatable-thead > tr > th {
+  background: #f9fafb !important;
+  color: #6b7280 !important;
+  border-color: #e5e7eb !important;
+  border-top: 1px solid #e5e7eb !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem !important;
+}
+.p-datatable .p-datatable-tbody > tr {
+  background: #ffffff !important;
+  color: #111827 !important;
+  border-color: #f3f4f6 !important;
+  transition: background 0.12s ease;
+}
+.p-datatable .p-datatable-tbody > tr > td {
+  border-color: #f3f4f6 !important;
+  padding: 0.85rem 1rem !important;
+}
+.p-datatable .p-datatable-tbody > tr:hover {
+  background: #f9fafb !important;
+  cursor: pointer;
+}
+.p-datatable .p-datatable-tbody > tr.p-highlight {
+  background: #eff6ff !important;
+  color: #111827 !important;
+  box-shadow: inset 2px 0 0 #2563eb;
+}
+
+.p-paginator {
+  background: transparent !important;
+  border: none !important;
+  padding: 0.75rem 1rem !important;
+  color: #6b7280 !important;
+}
+
+/* row tints */
+.row-alert {
+  background: #fef2f2 !important;
+}
+.row-alert:hover {
+  background: #fee2e2 !important;
+}
+.row-warning {
+  background: #fffbeb !important;
+}
+.row-warning:hover {
+  background: #fef3c7 !important;
+}
+
+/* Tag — flat pill with tinted background */
+.p-tag {
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.02em;
+  border-radius: 6px !important;
+  padding: 3px 8px !important;
+}
+.p-tag.p-tag-success {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+}
+.p-tag.p-tag-danger {
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+}
+.p-tag.p-tag-warning {
+  background: #fffbeb !important;
+  color: #b45309 !important;
+}
+.p-tag.p-tag-secondary {
+  background: #f3f4f6 !important;
+  color: #4b5563 !important;
+}
+
+/* ProgressBar — thin flat */
+.p-progressbar {
+  background: #f1f5f9 !important;
+  border-radius: 999px !important;
+  height: 6px !important;
+}
+
+/* Sidebar — professional panel */
+.p-sidebar {
+  background: #ffffff !important;
+  color: #111827 !important;
+  border-left: 1px solid #e5e7eb !important;
+  box-shadow: -8px 0 24px rgba(15, 23, 42, 0.06) !important;
+}
+.p-sidebar .p-sidebar-header {
+  padding: 1.25rem 1.5rem !important;
+  border-bottom: 1px solid #e5e7eb;
+}
+.p-sidebar .p-sidebar-content {
+  padding: 1.5rem !important;
+}
+
+/* Dropdown */
+.p-dropdown {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+}
+.p-dropdown:hover {
+  border-color: #cbd5e1 !important;
+}
+.p-dropdown:not(.p-disabled).p-focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+}
+.p-dropdown .p-dropdown-label {
+  padding: 0.5rem 0.75rem !important;
+  color: #111827 !important;
+}
+
+/* Input */
+.p-inputtext {
+  border: 1px solid #e5e7eb !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  padding: 0.5rem 0.75rem !important;
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+.p-inputtext:hover {
+  border-color: #cbd5e1 !important;
+}
+.p-inputtext:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+}
+
+/* Button text variant */
+.p-button.p-button-text {
+  color: #6b7280 !important;
+}
+.p-button.p-button-text:hover {
+  background: #f3f4f6 !important;
+  color: #111827 !important;
+}
+
+/* Timeline */
+.p-timeline-event-opposite {
+  display: none !important;
+}
+.p-timeline-event-content {
+  padding: 0 0 1rem 0.75rem !important;
+  line-height: 1.35 !important;
+}
+.p-timeline-event-connector {
+  background: #e5e7eb !important;
+  width: 1px !important;
+}
+
+/* Knob */
+.p-knob svg text {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+/* fade-in for new alerts */
+@keyframes alert-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
+.alert-item {
+  animation: alert-in 0.25s ease-out;
+}
+
+/* gentle pulse on the "Live" dot */
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
   }
 }
-p {
-  margin: 0;
+.pulse-dot {
+  animation: pulse-dot 1.8s ease-in-out infinite;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+/* scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
