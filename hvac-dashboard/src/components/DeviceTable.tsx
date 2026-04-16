@@ -3,7 +3,8 @@ import { Column } from 'primereact/column'
 import { Tag } from 'primereact/tag'
 import { Button } from 'primereact/button'
 import { InputText } from 'primereact/inputtext'
-import { useState } from 'react'
+import { Dropdown } from 'primereact/dropdown'
+import { useState, useMemo } from 'react'
 import type { Device, DeviceStatus } from '../types'
 import { formatLastSeen } from '../data/simulator'
 
@@ -27,17 +28,55 @@ const statusMeta: Record<
   warning: { label: 'Warning', severity: 'warning', icon: 'pi-circle-fill' },
 }
 
+function parseFloor(location: string): string | null {
+  const m = location.match(/Floor\s+(\d+)/i)
+  return m ? `Floor ${m[1]}` : null
+}
+
+function parseZone(location: string): string | null {
+  const m = location.match(/Zone\s+([A-Z0-9]+)/i)
+  return m ? `Zone ${m[1]}` : null
+}
+
 export function DeviceTable({ devices, selected, onSelect }: Props) {
   const [search, setSearch] = useState('')
+  const [buildingFilter, setBuildingFilter] = useState<string | null>(null)
+  const [floorFilter, setFloorFilter] = useState<string | null>(null)
+  const [zoneFilter, setZoneFilter] = useState<string | null>(null)
+
+  const buildingOptions = useMemo(
+    () => [...new Set(devices.map((d) => d.site))].sort(),
+    [devices],
+  )
+
+  const floorOptions = useMemo(
+    () =>
+      [...new Set(devices.map((d) => parseFloor(d.location)).filter(Boolean) as string[])].sort(
+        (a, b) => parseInt(a.replace(/\D/g, ''), 10) - parseInt(b.replace(/\D/g, ''), 10),
+      ),
+    [devices],
+  )
+
+  const zoneOptions = useMemo(
+    () =>
+      [...new Set(devices.map((d) => parseZone(d.location)).filter(Boolean) as string[])].sort(),
+    [devices],
+  )
 
   const filtered = devices.filter((d) => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    return (
-      d.id.toLowerCase().includes(q) ||
-      d.location.toLowerCase().includes(q) ||
-      d.site.toLowerCase().includes(q)
-    )
+    if (buildingFilter && d.site !== buildingFilter) return false
+    if (floorFilter && parseFloor(d.location) !== floorFilter) return false
+    if (zoneFilter && parseZone(d.location) !== zoneFilter) return false
+    if (search) {
+      const q = search.toLowerCase()
+      if (
+        !d.id.toLowerCase().includes(q) &&
+        !d.location.toLowerCase().includes(q) &&
+        !d.site.toLowerCase().includes(q)
+      )
+        return false
+    }
+    return true
   })
 
   const rowClass = (d: Device) => {
@@ -49,38 +88,57 @@ export function DeviceTable({ devices, selected, onSelect }: Props) {
   return (
     <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-slate-200">
-        <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-slate-900 whitespace-nowrap">
-            Device Fleet
-          </h3>
-          <p className="text-[11px] text-slate-500 mt-0.5 whitespace-nowrap">
-            {filtered.length} of {devices.length} units shown
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="relative">
-            <i className="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none" />
-            <InputText
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search units…"
-              className="!pl-8 !w-56"
+      <div className="px-5 py-4 border-b border-slate-200 space-y-3">
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold text-slate-900 whitespace-nowrap">
+              Device Fleet
+            </h3>
+            <p className="text-[11px] text-slate-500 mt-0.5 whitespace-nowrap">
+              {filtered.length} of {devices.length} units shown
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="relative">
+              <i className="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none" />
+              <InputText
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search units…"
+                className="!pl-8 !w-56"
+              />
+            </span>
+            <Button
+              icon="pi pi-download"
+              text
+              severity="secondary"
+              tooltip="Export"
+              aria-label="Export"
             />
-          </span>
-          <Button
-            icon="pi pi-filter"
-            text
-            severity="secondary"
-            tooltip="Filters"
-            aria-label="Filters"
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <i className="pi pi-filter text-slate-400 text-xs" />
+          <Dropdown
+            value={buildingFilter}
+            options={buildingOptions}
+            onChange={(e) => setBuildingFilter(e.value ?? null)}
+            placeholder="Building"
+            showClear
           />
-          <Button
-            icon="pi pi-download"
-            text
-            severity="secondary"
-            tooltip="Export"
-            aria-label="Export"
+          <Dropdown
+            value={floorFilter}
+            options={floorOptions}
+            onChange={(e) => setFloorFilter(e.value ?? null)}
+            placeholder="Floor"
+            showClear
+          />
+          <Dropdown
+            value={zoneFilter}
+            options={zoneOptions}
+            onChange={(e) => setZoneFilter(e.value ?? null)}
+            placeholder="Zone"
+            showClear
           />
         </div>
       </div>
