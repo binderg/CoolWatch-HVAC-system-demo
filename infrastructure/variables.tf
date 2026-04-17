@@ -64,5 +64,5 @@ variable "allowed_origin" {
   description = "The frontend URL that the API allows CORS requests from."
   type        = string
   # This will be your Azure Static Web Apps URL, e.g:
-  # https://nice-sky-00bc14f10.2.azurestaticapps.net
+  # https://victorious-cliff-04db1f910.7.azurestaticapps.net
 }
