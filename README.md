@@ -2,7 +2,7 @@
 
 A full-stack real-time dashboard for monitoring a fleet of HVAC units. A NestJS backend runs a simulation engine that ticks sensor data every 3 seconds, broadcasts updates over WebSocket, and serves initial state over REST. A React frontend renders the live telemetry — device table, KPI cards, live charts, an alert feed, and a per-device detail panel.
 
-demo - https://nice-sky-00bc14f10.2.azurestaticapps.net/
+demo - [https://victorious-cliff-04db1f910.7.azurestaticapps.net/](https://victorious-cliff-04db1f910.7.azurestaticapps.net/)
 
 * * *
 
