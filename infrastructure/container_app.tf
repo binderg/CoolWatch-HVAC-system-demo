@@ -108,11 +108,16 @@ resource "azurerm_container_app" "api" {
   # ---------------------------------------------------------------------------
   template {
     container {
-      name   = "hvac-api"
-      image  = "${azurerm_container_registry.main.login_server}/hvac-api:latest"
-      # This is the image URL that GitHub Actions will push to.
-      # Pattern: <registry-login-server>/<image-name>:<tag>
-      # e.g.    crhvacdev.azurecr.io/hvac-api:latest
+      name  = "hvac-api"
+      image = "mcr.microsoft.com/k8se/quickstart:latest"
+      # PLACEHOLDER IMAGE — needed because Terraform won't create the Container App
+      # if the image doesn't exist yet, and our real image (crhvacdev.azurecr.io/hvac-api)
+      # can't be pushed until AFTER the registry is created.
+      #
+      # GitHub Actions will build and push the real image later. When it does, a new
+      # revision of the Container App is created with the real image, automatically
+      # replacing this placeholder. The lifecycle block below tells Terraform to
+      # ignore image changes so it won't revert back to the placeholder on future applies.
 
       cpu    = 0.25
       memory = "0.5Gi"
@@ -175,5 +180,17 @@ resource "azurerm_container_app" "api" {
     project     = var.project_name
     environment = var.environment
     managed_by  = "terraform"
+  }
+
+  # ---------------------------------------------------------------------------
+  # LIFECYCLE
+  # Tells Terraform to ignore changes to the container image after initial creation.
+  # GitHub Actions will update the image on every deploy — without this block,
+  # running `terraform apply` later would revert the image back to the placeholder.
+  # ---------------------------------------------------------------------------
+  lifecycle {
+    ignore_changes = [
+      template[0].container[0].image,
+    ]
   }
 }
