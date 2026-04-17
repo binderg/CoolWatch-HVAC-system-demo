@@ -57,3 +57,11 @@ logs/
 # ─── Test coverage ───────────────────────────────────────────────────────────
 coverage/
 .nyc_output/
+
+# ─── Terraform ───────────────────────────────────────────────────────────────
+infrastructure/terraform.tfvars
+infrastructure/*.tfvars
+infrastructure/.terraform/
+infrastructure/.terraform.lock.hcl
+infrastructure/terraform.tfstate
+infrastructure/terraform.tfstate.backup

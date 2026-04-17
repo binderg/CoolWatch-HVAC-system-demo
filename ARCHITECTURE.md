@@ -254,17 +254,3 @@ The NestJS backend is implemented and running. It mirrors the frontend simulatio
 | `alert.created` | Full `AlertItem` | When a device transitions into `alert` status |
 | `alert.acknowledged` | `{ id }` | When an alert is dismissed via REST |
 
----
-
-## Frontend swap points — connecting React to the API
-
-The React components (`KpiStrip`, `DeviceTable`, `LiveCharts`, etc.) do not need to change. Only `App.tsx` needs updating:
-
-| What to replace | Current (simulated) | Replace with |
-|---|---|---|
-| Device list on boot | `useState(() => seedDevices(14))` | `useEffect` → `GET /devices` |
-| Live telemetry | `setInterval` + `tickDevice()` | Socket.IO subscription to `telemetry.updated` |
-| Alert feed | Frontend threshold detection | Socket.IO subscription to `alert.created` |
-| Alert dismiss | Filters local `alerts[]` array | `POST /alerts/:id/acknowledge` |
-| Alert acknowledge | Sets device status locally | REST call + listen for `alert.acknowledged` |
-| Site list | Hardcoded `SITES` constant | `GET /sites` on mount |
