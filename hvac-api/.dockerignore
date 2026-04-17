@@ -1,0 +1,13 @@
+# .dockerignore works exactly like .gitignore but for Docker builds.
+# Files listed here are NOT copied into the image, keeping it small and clean.
+
+node_modules
+dist
+.env
+.env.*
+!.env.example
+coverage
+*.log
+.git
+.gitignore
+README.md
