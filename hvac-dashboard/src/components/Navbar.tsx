@@ -41,13 +41,7 @@ export function Navbar({ site, sites, onSiteChange, connected }: Props) {
           </div>
         </div>
 
-        {/* Nav tabs (placeholder for future expansion) */}
-        <nav className="hidden md:flex items-center gap-1 text-sm">
-          <NavTab active icon="pi-th-large" label="Overview" />
-          <NavTab icon="pi-server" label="Devices" />
-          <NavTab icon="pi-chart-line" label="Analytics" />
-          <NavTab icon="pi-bell" label="Alerts" />
-        </nav>
+
 
         {/* Right — site selector, connection, user */}
         <div className="flex items-center gap-3 shrink-0">
@@ -85,25 +79,4 @@ export function Navbar({ site, sites, onSiteChange, connected }: Props) {
   )
 }
 
-function NavTab({
-  icon,
-  label,
-  active,
-}: {
-  icon: string
-  label: string
-  active?: boolean
-}) {
-  return (
-    <button
-      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors whitespace-nowrap ${
-        active
-          ? 'bg-slate-100 text-slate-900'
-          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-      }`}
-    >
-      <i className={`pi ${icon} text-xs`} />
-      {label}
-    </button>
-  )
-}
+

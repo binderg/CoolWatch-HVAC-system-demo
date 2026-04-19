@@ -7,6 +7,7 @@ import { AlertFeed } from './components/AlertFeed'
 import { DeviceDetail } from './components/DeviceDetail'
 import { api, connectSocket, type TelemetryUpdate } from './lib/api'
 import type { AlertItem, Device } from './types'
+import logo from './assets/logo.svg'
 
 function App() {
   const [devices, setDevices] = useState<Device[]>([])
@@ -120,6 +121,24 @@ function App() {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-5">
         <div className="flex flex-col items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 bg-sky-600"
+              style={{
+                maskImage: `url(${logo})`,
+                maskSize: 'contain',
+                maskRepeat: 'no-repeat',
+                maskPosition: 'center',
+                WebkitMaskImage: `url(${logo})`,
+                WebkitMaskSize: 'contain',
+                WebkitMaskRepeat: 'no-repeat',
+                WebkitMaskPosition: 'center',
+              }}
+            />
+            <span className="text-slate-900 font-semibold text-xl tracking-tight">
+              CoolWatch
+            </span>
+          </div>
           <div className="w-10 h-10 rounded-full border-4 border-slate-200 border-t-sky-600 animate-spin" />
           <div className="text-center">
             <p className="text-slate-800 font-semibold text-base tracking-tight">
