@@ -13,6 +13,7 @@ function App() {
   const [alerts, setAlerts] = useState<AlertItem[]>([])
   const [sites, setSites] = useState<string[]>(['All Sites'])
   const [connected, setConnected] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>('HVAC-04')
   const [detailOpen, setDetailOpen] = useState(false)
   const [site, setSite] = useState('All Sites')
@@ -30,6 +31,7 @@ function App() {
         setSites(['All Sites', ...initialSites])
       })
       .catch((err) => console.error('Initial load failed:', err))
+      .finally(() => { if (!cancelled) setIsLoading(false) })
 
     // Subscribe to live updates
     const socket = connectSocket()
@@ -113,6 +115,24 @@ function App() {
     hour: '2-digit',
     minute: '2-digit',
   })
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-5">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 rounded-full border-4 border-slate-200 border-t-sky-600 animate-spin" />
+          <div className="text-center">
+            <p className="text-slate-800 font-semibold text-base tracking-tight">
+              Connecting to server…
+            </p>
+            <p className="text-slate-500 text-sm mt-1">
+              Loading fleet data, please wait
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
